@@ -7,7 +7,7 @@ A collection of learning projects exploring LangChain and LangGraph frameworks f
 ```
 learning-langchain-langraph/
 ├── FirstAgent/          # Initial agent project - basic LangGraph state machine
-├── SecondAgent/         # (Coming soon)
+├── SecondAgent/         # Second agent project - a very bassic sequential graph
 ├── ThirdAgent/          # (Coming soon)
 └── README.md
 ```
