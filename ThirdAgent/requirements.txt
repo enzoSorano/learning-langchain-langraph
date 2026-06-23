@@ -1,0 +1,8 @@
+langgraph
+langchain
+langchain-anthropic
+langchain-openai
+python-dotenv
+ipython
+pillow
+graphviz
