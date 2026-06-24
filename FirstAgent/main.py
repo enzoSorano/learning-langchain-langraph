@@ -19,8 +19,6 @@ def process_values(state: AgentState) -> AgentState:
     elif state["operation"] == "*":
         value = math.prod(state["values"])
 
-
-
     state['results'] = f"Hello, {state['name']}! your operation was {state['operation']} and the result is {value}" # create a results string based on the name and values
 
     return state
