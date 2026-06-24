@@ -1,6 +1,32 @@
 from typing import List, TypedDict
 from langgraph.graph import StateGraph, START, END
+from enum import Enum
 import random
+
+
+class Hint(str, Enum):
+    HIGHER = "higher"
+    LOWER = "lower"
+
+class Route(str, Enum):
+    LOOP = "loop"
+    EXIT = "exit"
+    
+class Node(str, Enum):
+    SETUP = "setup"
+    GUESS = "guess"
+    FINAL = "final"
+
+#all of the AgentState keys
+class sKey(str, Enum):
+    ATTEMPTS     = "attempts"
+    LOWER_BOUND  = "lower_bound"
+    UPPER_BOUND  = "upper_bound"
+    PLAYER_NAME  = "player_name"
+    HINT         = "hint"
+    ACTUAL_NUMBER = "actualNumber"
+    GUESS        = "guess"
+    GUESSES      = "guesses"
 
 
 class AgentState(TypedDict):
@@ -18,57 +44,56 @@ class AgentState(TypedDict):
 def setup_node(state: AgentState) -> AgentState:
     """Node for greating the user"""
     #zero out counter and guesses
-    state['attempts'] = 0
-    #state['guesses'] = []
+    state[sKey.ATTEMPTS] = 0
 
     #set upper and lower bounds
-    state['lower_bound'] = 1
-    state['upper_bound'] = 20
+    state[sKey.LOWER_BOUND] = 1
+    state[sKey.UPPER_BOUND] = 20
 
     #keep lower bound zero to start
-    state['guess'] = 0
-    state['hint'] = "higher"
-    
+    state[sKey.GUESS] = 0
+    state[sKey.HINT] = Hint.HIGHER
+
     return state
 
 def guess_node(state: AgentState) -> AgentState:
     """"adjust the bounds for the guess and guess the number"""
     #check the hint from the previous round and narrow the bounds
-    if state['hint'] == "higher":
-        state['lower_bound'] = state['guess'] + 1  # exclude the previous guess
-    elif state['hint'] == "lower":
-        state['upper_bound'] = state['guess'] - 1  # exclude the previous guess
+    if state[sKey.HINT] == Hint.HIGHER:
+        state[sKey.LOWER_BOUND] = state[sKey.GUESS] + 1  # exclude the previous guess
+    elif state[sKey.HINT] == Hint.LOWER:
+        state[sKey.UPPER_BOUND] = state[sKey.GUESS] - 1  # exclude the previous guess
 
     #make a guess within the updated bounds
-    state['guess'] = random.randint(state['lower_bound'], state['upper_bound'])
+    state[sKey.GUESS] = random.randint(state[sKey.LOWER_BOUND], state[sKey.UPPER_BOUND])
 
     #increment the counter and record the guess
-    state['attempts'] += 1
-    state['guesses'].append(state['guess'])
+    state[sKey.ATTEMPTS] += 1
+    state[sKey.GUESSES].append(state[sKey.GUESS])
 
     #update the hint based on this guess
-    if state['actualNumber'] > state['guess']:
-        state['hint'] = "higher"
-    elif state['actualNumber'] < state['guess']:
-        state['hint'] = "lower"
+    if state[sKey.ACTUAL_NUMBER] > state[sKey.GUESS]:
+        state[sKey.HINT] = Hint.HIGHER
+    elif state[sKey.ACTUAL_NUMBER] < state[sKey.GUESS]:
+        state[sKey.HINT] = Hint.LOWER
 
     return state
 
 def should_continue(state: AgentState) -> str:
     """Read-only router — never modify state here"""
-    if state['actualNumber'] == state['guess']:
-        return "exit"
-    elif state['attempts'] >= 7:
-        return "exit"
+    if state[sKey.ACTUAL_NUMBER] == state[sKey.GUESS]:
+        return Route.EXIT
+    elif state[sKey.ATTEMPTS] >= 7:
+        return Route.EXIT
     else:
-        return "loop"
+        return Route.LOOP
 
 def final_node(state: AgentState) -> AgentState:
     """print the final output"""
-    if state['guess'] == state['actualNumber']:
-        print(f"Got it {state['player_name']}! The number was {state['actualNumber']}. It took {state['attempts']} attempts. Guesses: {state['guesses']}")
+    if state[sKey.GUESS] == state[sKey.ACTUAL_NUMBER]:
+        print(f"Got it {state[sKey.PLAYER_NAME]}! The number was {state[sKey.ACTUAL_NUMBER]}. It took {state[sKey.ATTEMPTS]} attempts. Guesses: {state[sKey.GUESSES]}")
     else:
-        print(f"Sorry {state['player_name']}, couldn't guess it in 7 attempts! The number was {state['actualNumber']}. Guesses: {state['guesses']}")
+        print(f"Sorry {state[sKey.PLAYER_NAME]}, couldn't guess it in 7 attempts! The number was {state[sKey.ACTUAL_NUMBER]}. Guesses: {state[sKey.GUESSES]}")
     return state
 
 
@@ -76,33 +101,33 @@ if __name__ == "__main__":
     #create graph
     graph = StateGraph(AgentState)
 
-    graph.add_node("setup", setup_node)
-    graph.add_node("guess", guess_node)
-    graph.add_node("final", final_node)
+    graph.add_node(Node.SETUP, setup_node)
+    graph.add_node(Node.GUESS, guess_node)
+    graph.add_node(Node.FINAL, final_node)
 
-    graph.set_entry_point("setup")
-    graph.add_edge("setup", "guess")
+    graph.set_entry_point(Node.SETUP)
+    graph.add_edge(Node.SETUP, Node.GUESS)
     graph.add_conditional_edges(
-        "guess",
+        Node.GUESS,
         should_continue,
         {
-            "loop": "guess",
-            "exit": "final"
+            Route.LOOP: Node.GUESS,
+            Route.EXIT: Node.FINAL
         }
     )
-    graph.add_edge("final", END)
+    graph.add_edge(Node.FINAL, END)
     
     app = graph.compile()
     
     answer = app.invoke({
-        "attempts": 0,
-        "lower_bound": 1,
-        "upper_bound": 20,
-        "player_name": "enzo",
-        "hint": "higher",
-        "actualNumber": 14,
-        "guess": 0,
-        "guesses": []
+        sKey.ATTEMPTS: 0,
+        sKey.LOWER_BOUND: 1,
+        sKey.UPPER_BOUND: 20,
+        sKey.PLAYER_NAME: "enzo",
+        sKey.HINT: Hint.HIGHER,
+        sKey.ACTUAL_NUMBER: 14,
+        sKey.GUESS: 0,
+        sKey.GUESSES: []
     })
     print(answer)
 
