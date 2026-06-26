@@ -1,6 +1,6 @@
-import math
 from typing import List, TypedDict
 from langgraph.graph import StateGraph
+import math
 
 class AgentState(TypedDict):
     name: str
