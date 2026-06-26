@@ -18,6 +18,9 @@ Conditional routing and the factory function pattern. This is where graphs start
 ### FourthAgent
 Looping in LangGraph, built as a number guessing game. Loops aren't a native feature — they're a conditional edge that points back to a previous node. The agent narrows its range each round until it finds the answer or runs out of attempts. Classic game loop, LangGraph style.
 
+### FifthAgent
+Plugging in a real LLM. This one shows how easy it is to swap in any LangChain-supported model — in this case Google Gemini — and wire it into a graph node. One import, one initialization, and your graph is talking to an AI.
+
 ## Project Structure
 
 ```
